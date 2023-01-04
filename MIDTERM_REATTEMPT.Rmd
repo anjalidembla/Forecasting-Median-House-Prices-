@@ -1,0 +1,352 @@
+---
+title: "Midterm-BF-Reattempt_AnjaliDembla"
+author: "Anjali Dembla"
+date: "2022-11-02"
+output: html_document
+---
+
+```{r}
+#Loading packages
+
+library(readr)
+library(fpp)
+library(fpp2)
+#Importing the dataset
+NJ_MedianListingPrice_AllHomes <- read_csv(file.choose())
+print(NJ_MedianListingPrice_AllHomes, n= 257)
+
+NJ_Home_Raw <- NJ_MedianListingPrice_AllHomes$Value
+print(NJ_Home_Raw)
+
+NJ_Home_TS <- ts(NJ_Home_Raw,frequency = 12, start = c(1996,4))
+print(NJ_Home_TS)
+#Taking subset of timeseries data after 2008
+traindata <- window(NJ_Home_TS,start=2008,end=c(2016,4))
+print(traindata)
+#Plots and Inference
+#•	Show a time series plot. 
+plot(NJ_Home_TS, main = "Median values of House Prices in NJ")
+plot(traindata, main = "Median values of House Prices in NJ")
+#•	Please summaries your observations of the times series plot
+Acf(NJ_Home_TS)
+Acf(traindata)
+#We observe that there is increasing and  decreasing trend observed for a short interval of time. 
+#There are peaks and trough
+#Values keep increasing from year 2000, gets to maximum then decrease from year 2006 or later and increase after 2015. Lowest value observed before 2000.
+#There is no cyclic nature observed
+#This is a monthly time series as the frequency is 12.
+#Over the time lag its observed the values generally decrease
+options(scipen=99)
+
+#Central Tendency
+#What are the min, max, mean, median, 1st and 3rd Quartile values of the times series? 
+min(NJ_Home_TS)
+max(NJ_Home_TS)
+range(NJ_Home_TS)
+mean(NJ_Home_TS)
+IQR(NJ_Home_TS)
+quantile(NJ_Home_TS)
+summary(NJ_Home_TS)
+min(traindata)
+max(traindata)
+range(traindata)
+mean(traindata)
+IQR(traindata)
+quantile(traindata)
+summary(traindata)
+#Min :- 142900 , Max:- 373100 , Median :- 280200
+#FIRST QUARTILE :- 197800
+#Third Quartile :- 307900
+
+#•	Show the box plot. 
+boxplot.stats(NJ_Home_TS)
+boxplot(NJ_Home_TS ,data=NJ_Home_TS, main = "Boxplot of Median House prices of NJ")
+
+boxplot.stats(traindata)
+boxplot(traindata ,data=traindata, main = "Boxplot of Median House prices of NJ")
+
+#	Can you summarize your observation about the time series from the summary stats and box plot? 
+#Boxplots are a measure of how well distributed is the data in a data set. It divides the data set into three quartiles. Based on the summary stats and box plot, we can easily locate the minimum as well as maximum value of the median house price. 142900 is the minimum value whereas 373100 is the maximum value.The average price of House in NJ is around 263499. There are no outliers in the data set as visible in the plot.
+#For the boxplot of train data, there are some outliers.
+
+
+##Decomposition
+
+#•	Plot the decomposition of the time series.
+stl_decomp <- stl(NJ_Home_TS,s.window ="periodic")
+stl_decomp
+plot(stl_decomp)
+attributes(stl_decomp)
+
+stl_decomp2 <- stl(traindata,s.window ="periodic")
+stl_decomp2
+plot(stl_decomp2)
+attributes(stl_decomp2)
+#•	Is the times series seasonal?
+#Yes it is the pattern repeats at regular interval of time
+
+#•	Is the decomposition additive or multiplicative? 
+ValueComp <- decompose(NJ_Home_TS)
+ValueComp2<- decompose(traindata)
+ValueComp
+ValueComp2
+plot(ValueComp)
+plot(ValueComp2)
+attributes(ValueComp)
+attributes(ValueComp2)
+#The decomposition is "additive"
+
+#•	If seasonal, what are the values of the seasonal monthly indices? 
+#-49.804894 -20.638228 -39.160053  14.589947  65.006614  68.756614  33.548280  20.006614
+#Of the subset timeseries with data after 2008
+#-57.05605  -78.48462 -168.96081 -172.53224  -77.88938   60.80109  156.18800
+#217.64633  185.35466   89.52133  -61.81796  -92.77034
+
+#•	For which month is the value of time series high and for which month is it low?
+max(ValueComp2$figure) #August highest
+min(ValueComp2$figure) #April lowest
+#The value is highest in june and lowest in january
+#•	Can you think of the reason behind the value being high in those months and low in those months?
+#Typically, the house prices will go down in winter months because there are less buyers on the market.Based on the demand from buyers and their purchasing behaviour, the values are lowest in january colder month and while in summer, as the demand increases for the people to purchase, go out and visit the house prices also increase.
+
+#•	Show the plot for time series adjusted for seasonality. Overlay this with the line for actual time series? Does seasonality have big fluctuations to the value of time series? 
+
+plot(NJ_Home_TS)
+lines(seasadj(stl_decomp), col="Red")
+lines(seasadj(ValueComp), col="Red")
+
+plot(traindata)
+lines(seasadj(stl_decomp), col="Red")
+lines(seasadj(ValueComp), col="Red")
+
+#No, seasonality does not have big fluctuations to the value of timeseries
+
+##Naïve Method
+#	Output
+naive_forecast <- naive(NJ_Home_TS,6)
+plot(naive_forecast)
+attributes(naive_forecast)
+
+naive_forecast2 <- naive(traindata,6)
+plot(naive_forecast2)
+attributes(naive_forecast2)
+#	Perform Residual Analysis for this technique. 
+#o	Do a plot of residuals. What does the plot indicate?
+plot(naive_forecast$residuals)
+plot(naive_forecast2$residuals)
+
+#There is no pattern observed. lowest values observed in period between 2005 and 2010.Fluctuations are random
+#Residual values have been negative till  some period in 2012 and then became positive
+
+#o	Do a Histogram plot of residuals. What does the plot indicate?
+hist(naive_forecast$residuals)
+
+hist(naive_forecast2$residuals)
+
+#The plot shows normalized pattern meaning no pattern in residuals.
+#The plot with trained data shows a little biased behaviour
+
+#o	Do a plot of fitted values vs. residuals. What does the plot indicate?
+plot(naive_forecast$fitted ~ naive_forecast$residuals)
+abline(v=0, col="blue")
+plot(naive_forecast2$fitted ~ naive_forecast2$residuals)
+abline(v=0, col="blue")
+qqnorm(naive_forecast2$residuals)
+#add a straight diagonal line to the plot
+qqline(naive_forecast2$residuals) 
+
+#Residual values tend to slightly deviate from the normal line in case of train data
+#The  spread of residual values tend to more in case of lower fitted values compared to the higher ones
+#residuals are negative for higher fitted values. For lower fitted values residuals are greater than zero
+
+#o	Do a plot of actual values vs. residuals. What does the plot indicate?
+plot(naive_forecast$x ~ naive_forecast$residuals)
+plot(naive_forecast2$x ~ naive_forecast2$residuals)
+#The  spread of residual values tend to more in case of lower actual values compared to the higher ones
+#residuals are negative for higher actual values. For lower actual values residuals are greater than zero, although there is are a couple of values here which have negative residuals.
+#After 2013,residuals are mainly positive
+
+
+
+#o	Do an ACF plot of the residuals? What does this plot indicate?
+Acf(naive_forecast$residuals)
+Acf(naive_forecast2$residuals)
+#Values keep decreasing. Decreasing trend.
+
+#•	Print the 5 measures of accuracy for this forecasting technique
+testdata <- window(NJ_Home_TS, start=c(2016,5))
+
+print(testdata)
+datafit2 <- naive(traindata,h=12)
+print(datafit2)
+print(traindata)
+print(testdata)
+accuracy(datafit2, testdata)
+accuracy(naive_forecast2)
+
+
+#•	Forecast 
+#o	Time series value for next year. Show table and plot
+naive_forecast3 <- naive(traindata,16)
+plot (naive_forecast3)
+naive_forecast3
+#•	Summarize this forecasting technique
+#The naïve method of forecasting dictates that we use the previous period to forecast for the next period.It can provide benchmark for the other models. The value estimated for each month of next year is 311600. This is for all months based on the last value taken.
+#o	How good is the accuracy?
+datafit3 <- naive(traindata, h=16)
+accuracy(datafit3,testdata)
+accuracy(naive_forecast3)
+#o	What does it predict the value of time series will be in one year?
+#The value will be 311600 for the first subset
+#for the second subset of data after 2008 the predicted value came out to be 294700
+#o	Other observation
+#It remains constant for every month giving us a straight line.
+
+
+##Simple Moving Averages
+#•	Plot the graph for time series.
+plot(NJ_Home_TS)
+MA3_forecast <- ma(NJ_Home_TS,order=3)
+MA6_forecast <- ma(NJ_Home_TS,order=6)
+MA9_forecast <- ma(NJ_Home_TS,order=9)
+lines(MA3_forecast,col="Red")
+lines(MA6_forecast,col="Blue")
+lines(MA9_forecast,col="Green")
+
+plot(traindata)
+MA3_forecast1 <- ma(traindata,order=3)
+MA6_forecast1 <- ma(traindata,order=6)
+MA9_forecast1 <- ma(traindata,order=9)
+lines(MA3_forecast1,col="Red")
+lines(MA6_forecast1,col="Blue")
+lines(MA9_forecast1,col="Green")
+
+
+#•	Show the Simple Moving average of order 3 on the plot above in Red
+#•	Show the Simple Moving average of order 6 on the plot above in Blue
+#•	Show the Simple Moving average of order 9 on the plot above in Green
+#•	(Bonus) show the forecast of next 12 months using one of the simple average order that you feel works best for time series
+datafit4<-forecast(MA9_forecast1,h=12)
+
+accuracy(datafit4)
+
+plot(datafit4)
+
+#•	What are your observations of the plot as the moving average order goes up? 
+#The curves get more smoother as the order goes up, mape reduces i.e model becomes better
+
+
+##
+# Simple Smoothing
+# •	Perform a simple smoothing forecast for next 12 months for the time series.
+SSE_Simple <- HoltWinters(NJ_Home_TS,beta=FALSE,gamma=FALSE)
+attributes(SSE_Simple)
+plot(SSE_Simple)
+
+SSE_Simple1 <- HoltWinters(traindata,beta=FALSE,gamma=FALSE)
+attributes(SSE_Simple1)
+
+plot(SSE_Simple1)
+# o	What is the value of alpha?  What does that value signify? 
+SSE_Simple1$alpha 
+#Its 0.9999497 The rate at which the weights decrease is controlled by this parameter  #larger weights to more recent observations than to observations from the distant past.
+# o	What is the value of initial state?
+SSE_Simple1$x
+# o	What is the value of sigma?  What does the sigma signify?
+# •	Perform Residual Analysis for this technique. 
+# o	Do a plot of residuals. What does the plot indicate?
+# o	Do a Histogram plot of residuals. What does the plot indicate?
+# o	Do a plot of fitted values vs. residuals. What does the plot indicate? 
+# o	Do a plot of actual values vs. residuals. What does the plot indicate?
+# o	Do an ACF plot of the residuals? What does this plot indicate?
+# •	Print the 5 measures of accuracy for this forecasting technique
+# •	Forecast 
+# o	Time series value for next year. Show table and plot
+# •	Summarize this forecasting technique
+# o	How good is the accuracy?
+# o	What does it predict the value of time series will be in one year?
+# o	Other observation
+tmp_f1 <- forecast(SSE_Simple)
+attributes(tmp_f1)
+plot(tmp_f1$residuals)
+hist(tmp_f1$residuals)
+Acf(tmp_f1$residuals)
+accuracy(tmp_f1)
+#Resudual analysis
+tmp_f2 <- forecast(SSE_Simple1)
+attributes(tmp_f2)
+plot(tmp_f2$residuals)
+hist(tmp_f2$residuals)
+Acf(tmp_f2$residuals)
+accuracy(tmp_f2,testdata)
+#ts-plot
+plot(tmp_f2)
+
+# Holt-Winters 
+# •	Perform Holt-Winters forecast for next 12 months for the time series.
+HW_forecast <- HoltWinters(NJ_Home_TS)
+plot(HW_forecast)
+HW_forecast1 <- HoltWinters(traindata)
+plot(HW_forecast1)
+
+# o	What is the value of alpha?  What does that value signify? 
+HW_forecast1$alpha
+#Alpha specifies the coefficient for the level smoothing. Beta specifies the coefficient for the trend smoothing. Gamma specifies the coefficient for the seasonal smoothing
+# o	What is the value of beta? What does that value signify?
+HW_forecast1$beta
+# o	What is the value of gamma? What does that value signify?
+HW_forecast1$gamma
+#Alpha specifies the coefficient for the level smoothing. Beta specifies the coefficient for the trend smoothing. Gamma specifies the coefficient for the seasonal smoothing
+# o	What is the value of initial states for the level, trend and seasonality? What do these values signify? 
+# o	What is the value of sigma?  What does the sigma signify?
+# •	Perform Residual Analysis for this technique. 
+# o	Do a plot of residuals. What does the plot indicate?
+# o	Do a Histogram plot of residuals. What does the plot indicate?
+# o	Do a plot of fitted values vs. residuals. What does the plot indicate? 
+# o	Do a plot of actual values vs. residuals. What does the plot indicate?
+# o	Do an ACF plot of the residuals? What does this plot indicate?
+# •	Print the 5 measures of accuracy for this forecasting technique
+# •	Forecast 
+
+tmp_f3 <- forecast(HW_forecast1)
+attributes(tmp_f3)
+plot(tmp_f3$residuals)
+hist(tmp_f3$residuals)
+Acf(tmp_f3$residuals)
+accuracy(tmp_f3,testdata)
+# o	Time series value for next year. Show table and plot
+# •	Summarize this forecasting technique
+# o	How good is the accuracy?
+# o	What does it predict the value of time series will be in one year?
+# o	Other observation
+plot(tmp_f3)
+
+
+# Accuracy Summary
+# •	Show a table of all the forecast method above with their accuracy measures.
+a1<-accuracy(datafit2, testdata)#naive
+a2<-accuracy(datafit4)#moving average
+a3<- accuracy(tmp_f2,testdata)#simplesmoothing
+a4<-accuracy(tmp_f3,testdata)#holtwinters
+data<-data.frame(a1,a2,a3,a4)
+print(data)
+
+
+
+# •	Show the best and worst forecast method for the accuracy measure of your choice. Why did you choose that accuracy measure?
+#Best is MA when rmse and mape are considered for ma of order 9 , the model behaves best
+
+
+# Conclusion
+# •	Summarize your analysis of time series value over the time-period.
+##forecast_ets_1 <- forecast.ets(NJ_Home_TS, h=16)
+
+
+#plot(forecast_ets_1)
+
+# •	Based on your analysis and forecast above, do you think the value of the time series will increase, decrease or stay flat over the next year? How about next 2 years?
+#It will decrease
+
+```
+
+
